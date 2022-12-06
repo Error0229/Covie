@@ -62,27 +62,40 @@ class MovieDataCrawler:
         main_page = requests.get(movie_url)
         main_sp = bs4.BeautifulSoup(main_page.text, 'html.parser')
         intro = main_sp.find_all("div", {"class": "movie_intro_info_r"})[0]
-        res["ch_name"] = intro.find_all("h1")[0].text
+
+        is_movie = main_sp.find_all("div", {"class": "movie_intro_foto"})[
+            0].find("div").get("class").__contains__("movie")
+        res["is_movie"] = is_movie
+        is_drama = main_sp.find_all("div", {"class": "movie_intro_foto"})[
+            0].find("div").get("class").__contains__("drama")
+        res["is_drama"] = is_drama
+        res["ch_name"] = strfm(intro.find_all("h1")[0].text).replace(' ', '')
         res["en_name"] = intro.find_all("h3")[0].text
         res["hashtags"] = [strfm(tag.text) for tag in intro.find_all(
             "div", {"class": "level_name_box"})[0].find_all("a")]
-        res["date"] = intro.find_all("span")[0].text[5:]
+        res["date"] = intro.find_all("span")[0+is_drama].text[5:]
         res["year"] = res["date"][:4]
-        res["length"] = intro.find_all("span")[1].text[5:]
-        if (intro.find_all("span")[4].find_all("a") == []):
-            res['director'] = strfm(strfm(intro.find_all("span")[4].text)[3:])
+        res["length"] = intro.find_all("span")[1+is_drama].text[5-is_drama:]
+        if (intro.find_all("span")[4+is_drama].find_all("a") == []):
+            res['director'] = strfm(
+                strfm(intro.find_all("span")[4+is_drama].text)[3:])
         else:
             res["director"] = strfm(intro.find_all(
-                "span")[4].find_all("a")[0].text)
+                "span")[4+is_drama].find_all("a")[0].text)
         res["actors"] = [strfm(name.text) for name in intro.find_all("span")[
-            5].find_all("a")]
-        res["score"] = main_sp.find_all("div", {"class": "score_num"})[0].text
+            5+is_drama].find_all("a")]
+        if (main_sp.find_all("div", {"class": "score_num"}) == []):
+            res["score"] = "N/A"
+        else:
+            res["score"] = main_sp.find_all(
+                "div", {"class": "score_num"})[0].text
         res["vote_num"] = get_num(main_sp.find_all(
             "div", {"class": "starbox2"})[0].find_all("span")[0].text)
         res["comment_url"] = main_sp.find_all("div", {"class": "btn_plus_more usercom_more gabtn"})[
             0].find_all("a")[0].get("href")
         res["intro"] = strfm(main_sp.find_all("span", {"id": "story"})[0].text)
-        res["level"] = intro.find_all("div")[0].get("class")[0][5:]
+        res["level"] = "N/A" if is_drama else intro.find_all("div")[
+            0].get("class")[0][5:]
         res["poster_url"] = main_sp.find_all("div", {"class": "movie_intro_foto"})[
             0].find("img").get("src")
         self.set_name(res["ch_name"])
