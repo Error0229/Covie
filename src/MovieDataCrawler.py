@@ -71,7 +71,7 @@ class MovieDataCrawler:
         choose = 0
         if len(all_match) > 1:
             for index, data in enumerate(all_match):
-                print(strfm(f'{index+1}. {data.text}'))
+                print(f'{index+1}. {strfm(data.text)}')
             choose = int(input("Choose the movie: ")) - 1
         movie_url = all_match[choose]["href"]
         res["title"] = strfm(all_match[choose].text)
