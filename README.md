@@ -14,10 +14,10 @@ python 爬蟲 vue angular NLP
 8. 預計規劃產出、功能、模組
 可以查詢電影頻論，爛番茄指數
 查詢最新上映電影會在哪些台北的電影院上映，上映時間等
-9. 規劃製作時程、里程碑產出
-week11 完成term project 企劃書
-week12做term project
-week13做term project，完成termproject
-week14測試功能、coverage100%
-week15等待報告
-week16等待報告
+9. 規劃製作時程、里程碑產出<br>
+week11 完成term project 企劃書<br>
+week12做term project<br>
+week13做term project<br>
+week14做term project，完成termproject<br>
+week15等待報告<br>
+week16等待報告<br>
