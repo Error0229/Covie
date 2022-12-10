@@ -134,12 +134,17 @@ class MovieDataCrawler:
 
     def crawl_imdb(self):
         res = {}
-        Name = self.zh_keyword.replace(" ", "+")
+        Name = self.keyword.replace(" ", "+")
         search_url = (f"https://www.imdb.com/find?q={Name}&s=tt&ref_=fn_tt_pop")
-        headers = {'user-agent': 'Mozilla/5.0'}
+        headers = {'user-agent': 'Mozilla/5.0', 'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'}
         req = requests.get(search_url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
-        all_match = soup.find_all("a", {"class": "ipc-metadata-list-summary-item__t"})
+
+        # with open("test.html", "w", encoding="utf-8") as f:
+        #     f.write(soup.prettify())
+        all_match = soup.find_all("a", attrs={"class": "ipc-metadata-list-summary-item__t"})
+        if all_match is None:
+            print(f"Can't find {self.keyword} in imdb database")
         choose = 0
         if len(all_match) > 1:
             for index, data in enumerate(all_match):
@@ -150,9 +155,13 @@ class MovieDataCrawler:
         res["website"] = movie_url
         req = requests.get(movie_url, headers=headers).text
         main_sp = bs4.BeautifulSoup(req, "html.parser")
-        res["en_name"] = main_sp.find("h1", {"class": "sc-b73cd867-0 eKrKux"}).text
-        res["zh_name"] = self.zh_keyword
-        present = main_sp.findAll("ul", {"data-testid": "hero-title-block__metadata"})[0].findAll("li")
+        # with open("test.html", "w", encoding="utf-8") as f:
+        #     f.write(main_sp.prettify())
+        try_find = main_sp.find(attrs={"data-testid": "hero-title-block__original-title"})
+        if try_find is not None:
+            res["second_name"] = try_find.text.split(":")[1]
+        res["origin_name"] = main_sp.find("h1", attrs={"data-testid": "hero-title-block__title"}).text
+        present = main_sp.findAll("ul", attrs={"data-testid": "hero-title-block__metadata"})[0].findAll("li")
         is_series = (len(present) == 4)
         res["is_series"] = is_series
         usa_movie_rating = ["G", "PG", "PG-13", "R", "NC-17"]
@@ -165,16 +174,19 @@ class MovieDataCrawler:
             elif is_year(info.text):
                 res["year"] = info.text[:4]
 
-        hashtags = [tag.text for tag in main_sp.findAll("div", {"class": "ipc-chip-list__scroller"})[0].findAll("span")]
+        hashtags = [tag.text for tag in main_sp.findAll("div", attrs={"class": "ipc-chip-list__scroller"})[0].findAll("span")]
         res["hashtags"] = hashtags
-        res["poster"] = main_sp.findAll("img", {"class": "ipc-image"})[0]["src"]
-        res["score"] = main_sp.find("span", {"class": "sc-7ab21ed2-1 jGRxWM"}).text
-        res["vote_num"] = main_sp.find("div", {"class": "sc-7ab21ed2-3 dPVcnq"}).text
-        res["director"] = main_sp.find("a", {"class": "ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link"}).text
+        res["poster"] = main_sp.findAll("img", attrs={"class": "ipc-image"})[0]["src"]
+        res["director"] = main_sp.find("a", attrs={"class": "ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link"}).text
         res["actors"] = [actor.text for actor in main_sp.findAll(
-            "a", {"class": "ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link"})[2:5]]
-        res["comment_url"] = movie_url + "reviews?ref_=tt_urv"
-        res["intro"] = main_sp.find("span", {"class": "sc-16ede01-1 kgphFu"}).text
+            "a", attrs={"class": "ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link"})[2:5]]
+        res["intro"] = main_sp.find("span", attrs={"class": "sc-16ede01-1 kgphFu"}).text
+        if main_sp.prettify().find("Coming soon"):
+            res["release_date"] = "Coming soon"
+        else:
+            res["score"] = main_sp.find("span", attrs={"class": "sc-7ab21ed2-1 jGRxWM"}).text
+            res["vote_num"] = main_sp.find("div", attrs={"class": "sc-7ab21ed2-3 dPVcnq"}).text
+            res["comment_url"] = movie_url + "reviews?ref_=tt_urv"
         self.update("imdb", res)
         print(res)
 
