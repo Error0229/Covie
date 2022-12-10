@@ -13,7 +13,6 @@ def strfm(text):
 
 # use re to check the string in x hour y min format
 
-
 def get_time(text):
     time = re.findall(r"\d+", text)
     if len(time) == 2:
@@ -24,6 +23,7 @@ def get_time(text):
 
 # use re to get the number from string
 def get_num(text):
+    
     return re.findall(r"\d+", text)[0]
 
 # use re to test if the string is a ad year
@@ -51,16 +51,68 @@ class MovieDataCrawler:
         self.data["title"] = name
 
     def crawl(self):
-        self.crawl_yahoo()
+        # self.crawl_yahoo()
         self.crawl_rotten_tomatoes()
-        self.crawl_imdb()
-        self.crawl_douban()
+        # self.crawl_imdb()
+        # self.crawl_douban()
 
     def update(self, website, result):
         self.data[website] = result
 
     def crawl_rotten_tomatoes(self):
-        pass
+        res = {}
+        Name = self.en_keyword.replace(" ", "+")
+        search_url = (f"https://www.rottentomatoes.com/search/?search={Name}")
+        headers = {'user-agent': 'Mozilla/5.0'}
+        req = requests.get(search_url, headers=headers).text
+        soup = bs4.BeautifulSoup(req, "html.parser")
+        all_match = soup.find("ul", {"slot": "list"})
+        all_match = all_match.find_all("a",{"data-qa": "info-name"})
+        choose = 0
+        if len(all_match) > 1:
+            for index, data in enumerate(all_match):
+                print(strfm(f'{index+1}. {data.text}'))
+            choose = int(input("Choose the movie: ")) - 1
+        movie_url = all_match[choose]["href"]
+        res["title"] = strfm(all_match[choose].text)
+        res["website"] = movie_url
+        req = requests.get(movie_url, headers=headers).text
+        soup = bs4.BeautifulSoup(req, "html.parser")
+        res["poster"] = soup.find("img", {"class": "posterImage"})["src"]
+        res["summary"] = strfm(soup.find("div", {"class": "movie_synopsis clamp clamp-6 js-clamp"}).text)
+        score_container=soup.find("score-board")
+        # print(score_container.attrs)
+        res["rating"] = score_container.attrs["tomatometerscore"]
+        if not res["rating"]:
+            res["rating"] = "N/A"
+        res["rating_count"] = get_num(score_container.find_all("a")[0].text)
+        res["rating_link"] = "https://www.rottentomatoes.com" + score_container.find_all("a")[0]["href"]
+        res["audience_rating"] = score_container.attrs["audiencescore"]
+        if not res["audience_rating"]:
+            res["audience_rating"] = "N/A"
+        res["audience_rating_count"] = get_num(score_container.find_all("a")[1].text)
+        res["audience_rating_link"] = "https://www.rottentomatoes.com"+score_container.find_all("a")[1]["href"]
+        info_label = soup.find_all("div",{"data-qa":"movie-info-item-label"})
+        info_value = soup.find_all("div",{"data-qa":"movie-info-item-value"})
+        for index in range(len(info_label)):
+            if strfm(info_label[index].text) == "Genre:":
+                res["genre"] = strfm(info_value[index].text)
+            if strfm(info_label[index].text) == "Director:":
+                res["director"] = strfm(info_value[index].text)
+            if info_label[index].text == "Runtime:":
+                # print(info_value[index].text)
+                res["length"] = get_time(info_value[index].text)
+            if info_label[index].text == "Producor:":
+                res["producer"] = strfm(info_value[index].text)
+            # data of theaters release date is more prior than data of streaming release date
+            if info_label[index].text == "Release Date (Theaters):":
+                res["date"] = strfm(info_value[index].text)
+            if info_label[index].text == "Release Date (Streaming):":
+                res["date"] = strfm(info_value[index].text)
+        
+            
+        self.update("rotten_tomatoes", res)
+        print(res)
 
     def init_result(self):
         res = {}
@@ -132,7 +184,9 @@ class MovieDataCrawler:
     def crawl_yahoo(self):
         res = {}
         Name = self.zh_keyword.replace(" ", "+")
+        
         search_url = (f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}")
+        
         search_res = requests.get(search_url)
         search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
         if search_sp.find_all("ul", {"class": "release_list mlist"}) == []:
@@ -172,3 +226,4 @@ class MovieDataCrawler:
 
     def to_json(self, res):
         return json.dumps(res, open(f"../data/Data_{self.title}.json", "w"))
+    
