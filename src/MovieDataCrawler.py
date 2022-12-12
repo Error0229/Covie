@@ -62,11 +62,12 @@ class MovieDataCrawler:
     def crawl_rotten_tomatoes(self):
         res = {}
         Name = self.en_keyword.replace(" ", "+")
-        search_url = (f"https://www.rottentomatoes.com/search/?search={Name}")
+        print(Name)
+        search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
-        all_match = soup.find("ul", {"slot": "list"})
+        all_match = soup.find_all("ul", {"slot": "list"})[1]
         all_match = all_match.find_all("a",{"data-qa": "info-name"})
         choose = 0
         if len(all_match) > 1:
