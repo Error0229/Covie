@@ -9,7 +9,8 @@ import translators.server as tss
 
 
 def strfm(text):
-    return re.sub(r"<br>", "\n", re.sub(r"^\s+|\s+$|\n", "", text))
+    # use re to remove space and \n at the beginning and middle of string also replace <br> with \n and remove space and \n at the end of string
+    return re.sub(r"<br>", "\n", re.sub(r"^\s+|\s+$|\n", "",re.sub(r"\s+", " ", text)))
 
 # use re to check the string in x hour y min format
 
@@ -82,7 +83,7 @@ class MovieDataCrawler:
         soup = bs4.BeautifulSoup(req, "html.parser")
         res["poster"] = soup.find("img", {"class": "posterImage"})["src"]
         res["summary"] = strfm(
-            soup.find("div", {"class": "movie_synopsis clamp clamp-6 js-clamp"}).text)
+            soup.find("div", {"id": "movieSynopsis"}).text)
         score_container = soup.find("score-board")
         # print(score_container.attrs)
         res["rating"] = score_container.attrs["tomatometerscore"]
