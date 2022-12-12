@@ -61,6 +61,23 @@ class MovieDataCrawler:
     def update(self, website, result):
         self.data[website] = result
 
+    def init_result(self):
+        res = {}
+        res["title"] = "N/A"
+        res["en_name"] = "N/A"
+        res["zh_name"] = "N/A"
+        res["is_series"] = "N/A"
+        res["length"] = "N/A"
+        res["rating"] = "N/A"
+        res["release_date"] = "N/A"
+        res["genre"] = "N/A"
+        res["director"] = "N/A"
+        res["cast"] = "N/A"
+        res["summary"] = "N/A"
+        res["poster"] = "N/A"
+        res["trailer"] = "N/A"
+        res["website"] = "N/A"
+        return res
     def crawl_rotten_tomatoes(self):
         res = {}
         Name = self.en_keyword.replace(" ", "+")
@@ -85,7 +102,6 @@ class MovieDataCrawler:
         res["summary"] = strfm(
             soup.find("div", {"id": "movieSynopsis"}).text)
         score_container = soup.find("score-board")
-        # print(score_container.attrs)
         res["rating"] = score_container.attrs["tomatometerscore"]
         if not res["rating"]:
             res["rating"] = "N/A"
@@ -116,27 +132,8 @@ class MovieDataCrawler:
                 res["date"] = strfm(info_value[index].text)
             if info_label[index].text == "Release Date (Streaming):":
                 res["date"] = strfm(info_value[index].text)
-
         self.update("rotten_tomatoes", res)
         print(res)
-
-    def init_result(self):
-        res = {}
-        res["title"] = "N/A"
-        res["en_name"] = "N/A"
-        res["zh_name"] = "N/A"
-        res["is_series"] = "N/A"
-        res["length"] = "N/A"
-        res["rating"] = "N/A"
-        res["release_date"] = "N/A"
-        res["genre"] = "N/A"
-        res["director"] = "N/A"
-        res["cast"] = "N/A"
-        res["summary"] = "N/A"
-        res["poster"] = "N/A"
-        res["trailer"] = "N/A"
-        res["website"] = "N/A"
-        return res
 
     def crawl_imdb(self):
         res = {}
