@@ -79,9 +79,8 @@ class MovieDataCrawler:
         search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
-        if req !=200:
-            print("rotten_tomatoes request error")
-            return
+
+        
         soup = bs4.BeautifulSoup(req, "html.parser")
         all_match = soup.find_all("ul", {"slot": "list"})[1].find_all("a",{"data-qa": "info-name"})
         # all_match = all_match.find_all("a",{"data-qa": "info-name"})
@@ -208,7 +207,43 @@ class MovieDataCrawler:
         print(res)
 
     def crawl_douban(self):
-        pass
+        res = {}
+        Name = self.zh_keyword.replace(" ", "+")
+        search_url = (
+            f"https://movie.douban.com/j/subject_suggest?q={Name}")
+        search_res = requests.get(search_url)
+        search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
+        if search_sp.find_all("li") == []:
+            print(f"Can't find {self.keyword} in douban database")
+            return
+        movie_url = (search_sp.find_all("li")[0].get("data-url"))
+        main_page = requests.get(movie_url)
+        main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
+        res["title"] = main_sp.find(
+            "span", attrs={"property": "v:itemreviewed"}).text
+        res["origin_name"] = main_sp.find(
+            "span", attrs={"property": "v:itemreviewed"}).text
+        res["website"] = movie_url
+        res["poster"] = main_sp.find( "img", attrs={"rel": "v:image"}).get("src") 
+        res["intro"] = main_sp.find("span", attrs={"property": "v:summary"}).text
+        res["director"] = main_sp.find(
+            "a", attrs={"rel": "v:directedBy"}).text
+        res["actors"] = [actor.text for actor in main_sp.findAll(
+            "a", attrs={"rel": "v:starring"})[:3]]
+        res["year"] = main_sp.find(
+            "span", attrs={"property": "v:initialReleaseDate"}).text[:4]
+        res["length"] = get_time(main_sp.find(
+            "span", attrs={"property": "v:runtime"}).text)
+        res["rating"] = main_sp.find(
+            "strong", attrs={"property": "v:average"}).text
+        res["vote_num"] = main_sp.find(
+            "span", attrs={"property": "v:votes"}).text
+        res["comment_url"] = movie_url + "comments?status=P"
+        self.update("douban", res)
+        print(res)
+
+            
+        
 
     def crawl_yahoo(self):
         res = {}
