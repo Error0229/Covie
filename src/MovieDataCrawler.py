@@ -72,7 +72,7 @@ class MovieDataCrawler:
         res["trailer"] = "N/A"
         res["website"] = "N/A"
         return res
-
+# tbf
     def crawl_rotten_tomatoes(self):
         res = {}
         Name = self.en_keyword.replace(" ", "+")
@@ -132,6 +132,42 @@ class MovieDataCrawler:
             if info_label[index].text == "Release Date (Streaming):":
                 res["date"] = strfm(info_value[index].text)
         self.update("rotten_tomatoes", res)
+        print(res)
+    #tbf
+    def crawl_douban(self):
+        res = {}
+        Name = self.zh_keyword.replace(" ", "+")
+        search_url = (
+            f"https://movie.douban.com/j/subject_suggest?q={Name}")
+        search_res = requests.get(search_url)
+        search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
+        if search_sp.find_all("li") == []:
+            print(f"Can't find {self.keyword} in douban database")
+            return
+        movie_url = (search_sp.find_all("li")[0].get("data-url"))
+        main_page = requests.get(movie_url)
+        main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
+        res["title"] = main_sp.find(
+            "span", attrs={"property": "v:itemreviewed"}).text
+        res["origin_name"] = main_sp.find(
+            "span", attrs={"property": "v:itemreviewed"}).text
+        res["website"] = movie_url
+        res["poster"] = main_sp.find( "img", attrs={"rel": "v:image"}).get("src") 
+        res["intro"] = main_sp.find("span", attrs={"property": "v:summary"}).text
+        res["director"] = main_sp.find(
+            "a", attrs={"rel": "v:directedBy"}).text
+        res["actors"] = [actor.text for actor in main_sp.findAll(
+            "a", attrs={"rel": "v:starring"})[:3]]
+        res["year"] = main_sp.find(
+            "span", attrs={"property": "v:initialReleaseDate"}).text[:4]
+        res["length"] = get_time(main_sp.find(
+            "span", attrs={"property": "v:runtime"}).text)
+        res["rating"] = main_sp.find(
+            "strong", attrs={"property": "v:average"}).text
+        res["vote_num"] = main_sp.find(
+            "span", attrs={"property": "v:votes"}).text
+        res["comment_url"] = movie_url + "comments?status=P"
+        self.update("douban", res)
         print(res)
 
     def crawl_imdb(self):
@@ -206,41 +242,6 @@ class MovieDataCrawler:
         self.update("imdb", res)
         print(res)
 
-    def crawl_douban(self):
-        res = {}
-        Name = self.zh_keyword.replace(" ", "+")
-        search_url = (
-            f"https://movie.douban.com/j/subject_suggest?q={Name}")
-        search_res = requests.get(search_url)
-        search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
-        if search_sp.find_all("li") == []:
-            print(f"Can't find {self.keyword} in douban database")
-            return
-        movie_url = (search_sp.find_all("li")[0].get("data-url"))
-        main_page = requests.get(movie_url)
-        main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
-        res["title"] = main_sp.find(
-            "span", attrs={"property": "v:itemreviewed"}).text
-        res["origin_name"] = main_sp.find(
-            "span", attrs={"property": "v:itemreviewed"}).text
-        res["website"] = movie_url
-        res["poster"] = main_sp.find( "img", attrs={"rel": "v:image"}).get("src") 
-        res["intro"] = main_sp.find("span", attrs={"property": "v:summary"}).text
-        res["director"] = main_sp.find(
-            "a", attrs={"rel": "v:directedBy"}).text
-        res["actors"] = [actor.text for actor in main_sp.findAll(
-            "a", attrs={"rel": "v:starring"})[:3]]
-        res["year"] = main_sp.find(
-            "span", attrs={"property": "v:initialReleaseDate"}).text[:4]
-        res["length"] = get_time(main_sp.find(
-            "span", attrs={"property": "v:runtime"}).text)
-        res["rating"] = main_sp.find(
-            "strong", attrs={"property": "v:average"}).text
-        res["vote_num"] = main_sp.find(
-            "span", attrs={"property": "v:votes"}).text
-        res["comment_url"] = movie_url + "comments?status=P"
-        self.update("douban", res)
-        print(res)
 
             
         
