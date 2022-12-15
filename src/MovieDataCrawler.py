@@ -132,6 +132,7 @@ class MovieDataCrawler:
                 res["date"] = strfm(info_value[index].text)
             if info_label[index].text == "Release Date (Streaming):":
                 res["date"] = strfm(info_value[index].text)
+        res["all_comments"] = self.crawl_rotten_tomatoes_comments(res["audience_rating_link"])
         self.update("rotten_tomatoes", res)
         print(res)
 
@@ -156,11 +157,11 @@ class MovieDataCrawler:
             for index, data in enumerate(all_match):
                 print(f'{index+1}. {data.text}')
             choose = int(input("Choose the movie: ")) - 1
-        movie_url = "https://www.imdb.com" + \
-            all_match[choose]["href"]+"?ref_=ttpl_pl_tt"
+        movie_url = "https://www.imdb.com" +  all_match[choose]["href"].split("?")[0]
+
         res["title"] = all_match[choose].text
         res["website"] = movie_url
-        req = requests.get(movie_url, headers=headers).text
+        req = requests.get(movie_url+"?ref_=ttpl_pl_tt", headers=headers).text
         main_sp = bs4.BeautifulSoup(req, "html.parser")
         # with open("test.html", "w", encoding="utf-8") as f:
         #     f.write(main_sp.prettify())
@@ -205,6 +206,7 @@ class MovieDataCrawler:
                 "div", attrs={"class": "sc-7ab21ed2-3 dPVcnq"}).text
             res["comment_url"] = movie_url + "reviews?ref_=tt_urv"
         self.update("imdb", res)
+        res["all_comments"] = self.crawl_imdb_comments(res["comment_url"])
         print(res)
 
     def crawl_douban(self):
@@ -266,6 +268,40 @@ class MovieDataCrawler:
                              0].find("img").get("src"))
         self.update("yahoo", res)
         print(res)
-
+    def crawl_imdb_comments(self, url):
+        res = []
+        headers = {'user-agent': 'Mozilla/5.0',
+                   'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'}
+        req = requests.get(url, headers=headers).text
+        soup = bs4.BeautifulSoup(req, "html.parser")
+        comments = soup.find_all("div", attrs= {"class":"lister-item mode-detail imdb-user-review collapsable"})
+        
+        for comment in comments:
+            comment_res = {}
+            text = comment.find("div", attrs={"class":"text show-more__control"}).text
+            format_text = text.replace("<br>","\n").replace("\"","")
+            helpful = comment.find("div", attrs={"class":"actions text-muted"}).text
+            helpful = strfm(helpful).split(" ")
+            total = int(helpful[3])
+            approved = int(helpful[0])
+            comment_res["text"] = format_text
+            comment_res["total"] = total
+            comment_res["approved"] = approved
+            res.append(comment_res)
+        return res
+    def crawl_rotten_tomatoes_comments(self, url):
+        print(url)
+        res = []
+        headers = {'user-agent': 'Mozilla/5.0'}
+        req = requests.get(url, headers=headers).text
+        soup = bs4.BeautifulSoup(req, "html.parser")
+        comments = soup.find_all("li", attrs= {"class":"audience-reviews__item"})
+        for comment in comments:
+            comment_res = {}
+            text = comment.find("p", attrs={"class":"audience-reviews__review"}).text
+            format_text = text.replace("<br>","\n").replace("\"","")
+            comment_res["text"] = format_text
+            res.append(comment_res)
+        return res
     def to_json(self, res):
         return json.dumps(res, open(f"../data/Data_{self.title}.json", "w"))
