@@ -13,8 +13,6 @@ def strfm(text):
     return re.sub(r"<br>", "\n", re.sub(r"^\s+|\s+$|\n", "",re.sub(r"\s+", " ", text)))
 
 # use re to check the string in x hour y min format
-
-
 def get_time(text):
     time = re.findall(r"\d+", text)
     if len(time) == 2:
@@ -25,18 +23,14 @@ def get_time(text):
 
 # use re to get the number from string
 def get_num(text):
-
     return re.findall(r"\d+", text)[0]
 
 # use re to test if the string is a ad year
-
-
 def is_year(text):
     return re.match(r"\d{4}", text)
 
 
 class MovieDataCrawler:
-
     def __init__(self, keyword):
         self.keyword = keyword
         self.zh_keyword = tss.google(keyword, to_language="zh-TW")
@@ -60,7 +54,7 @@ class MovieDataCrawler:
 
     def update(self, website, result):
         self.data[website] = result
-
+    
     def init_result(self):
         res = {}
         res["title"] = "N/A"
@@ -78,16 +72,19 @@ class MovieDataCrawler:
         res["trailer"] = "N/A"
         res["website"] = "N/A"
         return res
+
     def crawl_rotten_tomatoes(self):
         res = {}
         Name = self.en_keyword.replace(" ", "+")
-        print(Name)
         search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
+        if req !=200:
+            print("rotten_tomatoes request error")
+            return
         soup = bs4.BeautifulSoup(req, "html.parser")
-        all_match = soup.find_all("ul", {"slot": "list"})[1]
-        all_match = all_match.find_all("a",{"data-qa": "info-name"})
+        all_match = soup.find_all("ul", {"slot": "list"})[1].find_all("a",{"data-qa": "info-name"})
+        # all_match = all_match.find_all("a",{"data-qa": "info-name"})
         choose = 0
         if len(all_match) > 1:
             for index, data in enumerate(all_match):
@@ -97,10 +94,13 @@ class MovieDataCrawler:
         res["title"] = strfm(all_match[choose].text)
         res["website"] = movie_url
         req = requests.get(movie_url, headers=headers).text
+        if req !=200:
+            print("rotten_tomatoes movie request error")
+            return
         soup = bs4.BeautifulSoup(req, "html.parser")
-        res["poster"] = soup.find("img", {"class": "posterImage"})["src"]
+        res["poster"] = soup.find("img", attrs={"class": "posterImage"})["src"]
         res["summary"] = strfm(
-            soup.find("div", {"id": "movieSynopsis"}).text)
+            soup.find("div", attrs={"id": "movieSynopsis"}).text)
         score_container = soup.find("score-board")
         res["rating"] = score_container.attrs["tomatometerscore"]
         if not res["rating"]:
@@ -115,8 +115,8 @@ class MovieDataCrawler:
             score_container.find_all("a")[1].text)
         res["audience_rating_link"] = "https://www.rottentomatoes.com" + \
             score_container.find_all("a")[1]["href"]
-        info_label = soup.find_all("div", {"data-qa": "movie-info-item-label"})
-        info_value = soup.find_all("div", {"data-qa": "movie-info-item-value"})
+        info_label = soup.find_all("div", attrs={"data-qa": "movie-info-item-label"})
+        info_value = soup.find_all("div", attrs={"data-qa": "movie-info-item-value"})
         for index in range(len(info_label)):
             if strfm(info_label[index].text) == "Genre:":
                 res["genre"] = strfm(info_value[index].text)
