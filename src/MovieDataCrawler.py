@@ -47,9 +47,9 @@ class MovieDataCrawler:
         self.data["title"] = name
 
     def crawl(self):
-        self.crawl_yahoo()
+        # self.crawl_yahoo()
         self.crawl_rotten_tomatoes()
-        self.crawl_imdb()
+        # self.crawl_imdb()
         self.crawl_douban()
 
     def update(self, website, result):
@@ -79,23 +79,22 @@ class MovieDataCrawler:
         search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
-
-        
         soup = bs4.BeautifulSoup(req, "html.parser")
-        all_match = soup.find_all("ul", {"slot": "list"})[1].find_all("a",{"data-qa": "info-name"})
-        # all_match = all_match.find_all("a",{"data-qa": "info-name"})
+        all_match = soup.find("search-page-result",attrs= {"type": "movie"})
+        if not all_match:
+            print("rotten_tomatoes no matched movie")
+            return
+        all_match = all_match.find_all("search-page-media-row") 
         choose = 0
         if len(all_match) > 1:
-            for index, data in enumerate(all_match):
-                print(f'{index+1}. {strfm(data.text)}')
+            for i,pages in enumerate(all_match):
+                print(f'{i+1}. {strfm(pages.find("a",attrs ={"slot": "title"}).text)}')
             choose = int(input("Choose the movie: ")) - 1
-        movie_url = all_match[choose]["href"]
-        res["title"] = strfm(all_match[choose].text)
+        movie_url = all_match[choose].find("a",attrs ={"slot": "title"})["href"]
+        # print(movie_url)
+        res["title"] = strfm(all_match[choose].find("a",attrs ={"slot": "title"}).text)
         res["website"] = movie_url
         req = requests.get(movie_url, headers=headers).text
-        if req !=200:
-            print("rotten_tomatoes movie request error")
-            return
         soup = bs4.BeautifulSoup(req, "html.parser")
         res["poster"] = soup.find("img", attrs={"class": "posterImage"})["src"]
         res["summary"] = strfm(
