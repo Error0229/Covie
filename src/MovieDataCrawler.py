@@ -252,15 +252,20 @@ class MovieDataCrawler:
         Name = self.zh_keyword.replace(" ", "+")
 
         search_url = (
-            f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}")
-
+            f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}&type=movie&movie_type=all")
         search_res = requests.get(search_url)
         search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
         if search_sp.find_all("ul", {"class": "release_list mlist"}) == []:
             print(f"Can't find {self.keyword} in yahoo databse")
             return
-        movie_url = (search_sp.find_all("ul", {"class": "release_list mlist"})[
-                     0].find_all("li")[0].find_all("a")[0].get("href"))
+
+        movie_list = search_sp.find_all("ul", {"class": "release_list mlist"})[
+                     0].find_all("li")
+        for id, movie in enumerate(movie_list):
+            movie_name = movie.find_all("a")[1].text
+            print(f"{id+1}. {movie_name}")
+        choose = int(input("Choose the movie: ")) - 1
+        movie_url = movie_list[choose].find_all("a")[0].get("href")
         main_page = requests.get(movie_url)
         main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
         intro = main_sp.find_all("div", {"class": "movie_intro_info_r"})[0]
@@ -301,6 +306,7 @@ class MovieDataCrawler:
             "N/A" if is_series else intro.find_all("div")[0].get("class")[0][5:])
         res["poster_url"] = (main_sp.find_all("div", {"class": "movie_intro_foto"})[
                              0].find("img").get("src"))
+        res["all_comments"] = self.crawl_yahoo_comments(res["comment_url"])
         self.update("yahoo", res)
         print(res)
     def crawl_imdb_comments(self, url):
@@ -337,6 +343,28 @@ class MovieDataCrawler:
             format_text = text.replace("<br>","\n").replace("\"","")
             comment_res["text"] = format_text
             res.append(comment_res)
+        return res
+    def crawl_yahoo_comments(self, url):
+        res = []
+        headers = {'user-agent': 'Mozilla/5.0'}
+        req = requests.get(url, headers=headers).text
+        soup = bs4.BeautifulSoup(req, "html.parser")
+        with open("test.html", "w", encoding="utf-8") as f:
+            f.write(soup.prettify())
+        if (soup.find("div",attrs={"class":"page_numbox"})) == None:
+            total_page = 1
+        else:
+            total_page = int(soup.find("div",attrs={"class":"page_numbox"}).find_all("a")[-2].text)
+        for i in range(1, min(20,total_page+1)):
+            req = requests.get(url+"?sort=update_ts&order=desc&page="+str(i), headers=headers).text
+            soup = bs4.BeautifulSoup(req, "html.parser")
+            comments = soup.find_all("form", id = "form_good1")
+            for comment in comments:
+                comment_res = {}
+                text = comment.find_all("span")[2].text
+                format_text = text.replace("\r\n"," ")
+                comment_res["text"] = format_text
+                res.append(comment_res)
         return res
     def to_json(self, res):
         return json.dumps(res, open(f"../data/Data_{self.title}.json", "w"))
