@@ -10,9 +10,11 @@ import translators.server as tss
 
 def strfm(text):
     # use re to remove space and \n at the beginning and middle of string also replace <br> with \n and remove space and \n at the end of string
-    return re.sub(r"<br>", "\n", re.sub(r"^\s+|\s+$|\n", "",re.sub(r"\s+", " ", text)))
+    return re.sub(r"<br>", "\n", re.sub(r"^\s+|\s+$|\n", "", re.sub(r"\s+", " ", text)))
 
 # use re to check the string in x hour y min format
+
+
 def get_time(text):
     time = re.findall(r"\d+", text)
     if len(time) == 2:
@@ -26,6 +28,8 @@ def get_num(text):
     return re.findall(r"\d+", text)[0]
 
 # use re to test if the string is a ad year
+
+
 def is_year(text):
     return re.match(r"\d{4}", text)
 
@@ -47,14 +51,15 @@ class MovieDataCrawler:
         self.data["title"] = name
 
     def crawl(self):
-        # self.crawl_yahoo()
+        self.crawl_yahoo()
         self.crawl_rotten_tomatoes()
-        # self.crawl_imdb()
+        self.crawl_imdb()
         self.crawl_douban()
+        return self.data
 
     def update(self, website, result):
         self.data[website] = result
-    
+
     def init_result(self):
         res = {}
         res["title"] = "N/A"
@@ -73,6 +78,7 @@ class MovieDataCrawler:
         res["website"] = "N/A"
         return res
 # tbf
+
     def crawl_rotten_tomatoes(self):
         res = {}
         Name = self.en_keyword.replace(" ", "+")
@@ -80,19 +86,18 @@ class MovieDataCrawler:
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
-        all_match = soup.find("search-page-result",attrs= {"type": "movie"})
+        all_match = soup.find("search-page-result", attrs={"type": "movie"})
         if not all_match:
             print("rotten_tomatoes no matched movie")
             return
-        all_match = all_match.find_all("search-page-media-row") 
+        all_match = all_match.find_all("search-page-media-row")
         choose = 0
         if len(all_match) > 1:
-            for i,pages in enumerate(all_match):
+            for i, pages in enumerate(all_match):
                 print(f'{i+1}. {strfm(pages.find("a",attrs ={"slot": "title"}).text)}')
             choose = int(input("Choose the movie: ")) - 1
-        movie_url = all_match[choose].find("a",attrs ={"slot": "title"})["href"]
-        # print(movie_url)
-        res["title"] = strfm(all_match[choose].find("a",attrs ={"slot": "title"}).text)
+        movie_url = all_match[choose].find("a", attrs={"slot": "title"})["href"]
+        res["title"] = strfm(all_match[choose].find("a", attrs={"slot": "title"}).text)
         res["website"] = movie_url
         req = requests.get(movie_url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
@@ -132,8 +137,9 @@ class MovieDataCrawler:
                 res["date"] = strfm(info_value[index].text)
         res["all_comments"] = self.crawl_rotten_tomatoes_comments(res["audience_rating_link"])
         self.update("rotten_tomatoes", res)
-        print(res)
-    #tbf
+        # print(res)
+    # tbf
+
     def crawl_douban(self):
         res = {}
         Name = self.zh_keyword.replace(" ", "+")
@@ -152,7 +158,7 @@ class MovieDataCrawler:
         res["origin_name"] = main_sp.find(
             "span", attrs={"property": "v:itemreviewed"}).text
         res["website"] = movie_url
-        res["poster"] = main_sp.find( "img", attrs={"rel": "v:image"}).get("src") 
+        res["poster"] = main_sp.find("img", attrs={"rel": "v:image"}).get("src")
         res["intro"] = main_sp.find("span", attrs={"property": "v:summary"}).text
         res["director"] = main_sp.find(
             "a", attrs={"rel": "v:directedBy"}).text
@@ -168,7 +174,7 @@ class MovieDataCrawler:
             "span", attrs={"property": "v:votes"}).text
         res["comment_url"] = movie_url + "comments?status=P"
         self.update("douban", res)
-        print(res)
+        # print(res)
 
     def crawl_imdb(self):
         res = {}
@@ -191,7 +197,7 @@ class MovieDataCrawler:
             for index, data in enumerate(all_match):
                 print(f'{index+1}. {data.text}')
             choose = int(input("Choose the movie: ")) - 1
-        movie_url = "https://www.imdb.com" +  all_match[choose]["href"].split("?")[0]
+        movie_url = "https://www.imdb.com" + all_match[choose]["href"].split("?")[0]
 
         res["title"] = all_match[choose].text
         res["website"] = movie_url
@@ -241,11 +247,7 @@ class MovieDataCrawler:
             res["comment_url"] = movie_url + "reviews?ref_=tt_urv"
         self.update("imdb", res)
         res["all_comments"] = self.crawl_imdb_comments(res["comment_url"])
-        print(res)
-
-
-            
-        
+        # print(res)
 
     def crawl_yahoo(self):
         res = {}
@@ -260,12 +262,15 @@ class MovieDataCrawler:
             return
 
         movie_list = search_sp.find_all("ul", {"class": "release_list mlist"})[
-                     0].find_all("li")
-        for id, movie in enumerate(movie_list):
-            movie_name = movie.find_all("a")[1].text
-            print(f"{id+1}. {movie_name}")
-        choose = int(input("Choose the movie: ")) - 1
-        movie_url = movie_list[choose].find_all("a")[0].get("href")
+            0].find_all("li")
+        if len(movie_list) != 1:
+            for id, movie in enumerate(movie_list):
+                movie_name = movie.find_all("a")[1].text
+                print(f"{id+1}. {movie_name}")
+            choose = int(input("Choose the movie: ")) - 1
+            movie_url = movie_list[choose].find_all("a")[0].get("href")
+        else:
+            movie_url = movie_list[0].find_all("a")[0].get("href")
         main_page = requests.get(movie_url)
         main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
         intro = main_sp.find_all("div", {"class": "movie_intro_info_r"})[0]
@@ -308,20 +313,21 @@ class MovieDataCrawler:
                              0].find("img").get("src"))
         res["all_comments"] = self.crawl_yahoo_comments(res["comment_url"])
         self.update("yahoo", res)
-        print(res)
+        # print(res)
+
     def crawl_imdb_comments(self, url):
         res = []
         headers = {'user-agent': 'Mozilla/5.0',
                    'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7'}
         req = requests.get(url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
-        comments = soup.find_all("div", attrs= {"class":"lister-item mode-detail imdb-user-review collapsable"})
-        
+        comments = soup.find_all("div", attrs={"class": "lister-item mode-detail imdb-user-review collapsable"})
+
         for comment in comments:
             comment_res = {}
-            text = comment.find("div", attrs={"class":"text show-more__control"}).text
-            format_text = text.replace("<br>","\n").replace("\"","")
-            helpful = comment.find("div", attrs={"class":"actions text-muted"}).text
+            text = comment.find("div", attrs={"class": "text show-more__control"}).text
+            format_text = text.replace("<br>", "\n").replace("\"", "")
+            helpful = comment.find("div", attrs={"class": "actions text-muted"}).text
             helpful = strfm(helpful).split(" ")
             total = int(helpful[3])
             approved = int(helpful[0])
@@ -330,20 +336,22 @@ class MovieDataCrawler:
             comment_res["approved"] = approved
             res.append(comment_res)
         return res
+
     def crawl_rotten_tomatoes_comments(self, url):
         print(url)
         res = []
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
-        comments = soup.find_all("li", attrs= {"class":"audience-reviews__item"})
+        comments = soup.find_all("li", attrs={"class": "audience-reviews__item"})
         for comment in comments:
             comment_res = {}
-            text = comment.find("p", attrs={"class":"audience-reviews__review"}).text
-            format_text = text.replace("<br>","\n").replace("\"","")
+            text = comment.find("p", attrs={"class": "audience-reviews__review"}).text
+            format_text = text.replace("<br>", "\n").replace("\"", "")
             comment_res["text"] = format_text
             res.append(comment_res)
         return res
+
     def crawl_yahoo_comments(self, url):
         res = []
         headers = {'user-agent': 'Mozilla/5.0'}
@@ -351,20 +359,21 @@ class MovieDataCrawler:
         soup = bs4.BeautifulSoup(req, "html.parser")
         with open("test.html", "w", encoding="utf-8") as f:
             f.write(soup.prettify())
-        if (soup.find("div",attrs={"class":"page_numbox"})) == None:
+        if (soup.find("div", attrs={"class": "page_numbox"})) == None:
             total_page = 1
         else:
-            total_page = int(soup.find("div",attrs={"class":"page_numbox"}).find_all("a")[-2].text)
-        for i in range(1, min(20,total_page+1)):
+            total_page = int(soup.find("div", attrs={"class": "page_numbox"}).find_all("a")[-2].text)
+        for i in range(1, min(3, total_page+1)):  # since too much comments would slow the program down
             req = requests.get(url+"?sort=update_ts&order=desc&page="+str(i), headers=headers).text
             soup = bs4.BeautifulSoup(req, "html.parser")
-            comments = soup.find_all("form", id = "form_good1")
+            comments = soup.find_all("form", id="form_good1")
             for comment in comments:
                 comment_res = {}
                 text = comment.find_all("span")[2].text
-                format_text = text.replace("\r\n"," ")
+                format_text = text.replace("\r\n", " ")
                 comment_res["text"] = format_text
                 res.append(comment_res)
         return res
+
     def to_json(self, res):
         return json.dumps(res, open(f"../data/Data_{self.title}.json", "w"))
