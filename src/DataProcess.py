@@ -2,7 +2,7 @@ import json
 import text2emotion as te
 import cnsenti as cs
 import translators.server as tss
-
+from deep_translator import GoogleTranslator
 
 class DataProcess:
 
@@ -26,7 +26,13 @@ class DataProcess:
             return 0
         total = 0.0
         for comment in comments:
-            text_en = tss.google(comment["text"], to_language="en")
+            text_en = ""
+            if len(comment["text"]) > 4500 :
+                i = 0
+                while 4500 + i* 4500 < len(comment["text"]):
+                    text_en += GoogleTranslator(source='auto', target='en').translate(text=comment["text"][i*4500:(i+1)*4500])
+                    i += 1
+            # text_en =  GoogleTranslator(source='auto', target='en').translate(text=comment["text"])
             emotion = te.get_emotion(text_en)
             approved = comment.get("approved", 0.7)
             total = comment.get("total", 1)
@@ -44,7 +50,13 @@ class DataProcess:
             return 0
         total = 0.0
         for comment in comments:
-            text_zhCN = tss.google(comment["text"], to_language="zh-CN")
+            text_zhCN = ""
+            if len(comment["text"]) > 4500 :
+                i = 0
+                while 4500 + i* 4500 < len(comment["text"]):
+                    text_zhCN += GoogleTranslator(source='auto', target='zh-CN').translate(text=comment["text"][i*4500:(i+1)*4500])
+                    i += 1
+            # text_zhCN = GoogleTranslator(source='auto', target='zh-CN').translate(text=comment["text"])
             emotion = DataProcess.senti.sentiment_calculate(text_zhCN)
             neg = emotion["neg"]
             pos = emotion["pos"]

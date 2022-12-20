@@ -5,6 +5,7 @@ import json
 import os
 import translators as ts
 import translators.server as tss
+import nltk
 # use re to remove space and \n at the beginning and end of string also replace <br> with \n
 
 
@@ -36,6 +37,7 @@ def is_year(text):
 
 class MovieDataCrawler:
     def __init__(self, keyword):
+        nltk.download('omw-1.4')
         self.keyword = keyword
         self.zh_keyword = tss.google(keyword, to_language="zh-TW")
         self.en_keyword = tss.google(keyword, to_language="en")
@@ -203,8 +205,6 @@ class MovieDataCrawler:
         res["website"] = movie_url
         req = requests.get(movie_url+"?ref_=ttpl_pl_tt", headers=headers).text
         main_sp = bs4.BeautifulSoup(req, "html.parser")
-        # with open("test.html", "w", encoding="utf-8") as f:
-        #     f.write(main_sp.prettify())
         try_find = main_sp.find(
             attrs={"data-testid": "hero-title-block__original-title"})
         if try_find is not None:
@@ -251,19 +251,19 @@ class MovieDataCrawler:
 
     def crawl_yahoo(self):
         res = {}
-        Name = self.zh_keyword.replace(" ", "+")
+        Name = self.keyword.replace(" ", "+")
 
         search_url = (
             f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}&type=movie&movie_type=all")
         search_res = requests.get(search_url)
         search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
-        if search_sp.find_all("ul", {"class": "release_list mlist"}) == []:
+        if search_sp.find_all("div", attrs= {"class": "search_num _c"})[0].find("span").text == "0":
             print(f"Can't find {self.keyword} in yahoo databse")
             return
 
-        movie_list = search_sp.find_all("ul", {"class": "release_list mlist"})[
+        movie_list = search_sp.find_all("ul",attrs= {"class": "release_list mlist"})[
             0].find_all("li")
-        if len(movie_list) != 1:
+        if len(movie_list) > 1:
             for id, movie in enumerate(movie_list):
                 movie_name = movie.find_all("a")[1].text
                 print(f"{id+1}. {movie_name}")
