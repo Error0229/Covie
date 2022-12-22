@@ -38,7 +38,7 @@ class DataProcess:
             total = comment.get("total", 1)
             if total != 0:
                 factor = approved/total
-            score = (2*emotion["Happy"]-2*emotion["Angry"]+0.5*emotion["Surprise"]-0.5*emotion["Sad"]-0.5*emotion["Fear"])*factor
+            score = (0.8*emotion["Happy"]-0.66*emotion["Angry"]+0.2*emotion["Surprise"]-0.16*emotion["Sad"]-0.16*emotion["Fear"])*factor
             score = 1 if score > 1 else score
             score = -1 if score < -1 else score
             total += score
