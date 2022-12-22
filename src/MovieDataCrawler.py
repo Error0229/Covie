@@ -57,7 +57,6 @@ class MovieDataCrawler:
         self.crawl_yahoo()
         self.crawl_rotten_tomatoes()
         self.crawl_imdb()
-        self.crawl_douban()
         return self.data
 
     def update(self, website, result):
