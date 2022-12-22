@@ -42,6 +42,7 @@ class MovieDataCrawler:
         self.zh_keyword = tss.google(keyword, to_language="zh-TW")
         self.en_keyword = tss.google(keyword, to_language="en")
         self.data = {}
+        self.set_name(keyword)
         self.data["website"] = ["yahoo", "imdb", "douban", "rotten_tomatoes"]
         self.data["yahoo"] = {}
         self.data["imdb"] = {}
@@ -83,7 +84,7 @@ class MovieDataCrawler:
 
     def crawl_rotten_tomatoes(self):
         res = {}
-        Name = self.en_keyword.replace(" ", "+")
+        Name = self.keyword.replace(" ", "+")
         search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
@@ -94,10 +95,10 @@ class MovieDataCrawler:
             return
         all_match = all_match.find_all("search-page-media-row")
         choose = 0
-        if len(all_match) > 1:
-            for i, pages in enumerate(all_match):
-                print(f'{i+1}. {strfm(pages.find("a",attrs ={"slot": "title"}).text)}')
-            choose = int(input("Choose the movie: ")) - 1
+        # if len(all_match) > 1:
+        #     for i, pages in enumerate(all_match):
+        #         print(f'{i+1}. {strfm(pages.find("a",attrs ={"slot": "title"}).text)}')
+        #     choose = int(input("Choose the movie: ")) - 1
         movie_url = all_match[choose].find("a", attrs={"slot": "title"})["href"]
         res["title"] = strfm(all_match[choose].find("a", attrs={"slot": "title"}).text)
         res["website"] = movie_url
@@ -144,7 +145,7 @@ class MovieDataCrawler:
 
     def crawl_douban(self):
         res = {}
-        Name = self.zh_keyword.replace(" ", "+")
+        Name = self.keyword.replace(" ", "+")
         search_url = (
             f"https://movie.douban.com/j/subject_suggest?q={Name}")
         search_res = requests.get(search_url)
@@ -195,10 +196,10 @@ class MovieDataCrawler:
         if all_match is None:
             print(f"Can't find {self.keyword} in imdb database")
         choose = 0
-        if len(all_match) > 1:
-            for index, data in enumerate(all_match):
-                print(f'{index+1}. {data.text}')
-            choose = int(input("Choose the movie: ")) - 1
+        # if len(all_match) > 1:
+        #     for index, data in enumerate(all_match):
+        #         print(f'{index+1}. {data.text}')
+        #     choose = int(input("Choose the movie: ")) - 1
         movie_url = "https://www.imdb.com" + all_match[choose]["href"].split("?")[0]
 
         res["title"] = all_match[choose].text
@@ -263,14 +264,13 @@ class MovieDataCrawler:
 
         movie_list = search_sp.find_all("ul",attrs= {"class": "release_list mlist"})[
             0].find_all("li")
-        if len(movie_list) > 1:
-            for id, movie in enumerate(movie_list):
-                movie_name = movie.find_all("a")[1].text
-                print(f"{id+1}. {movie_name}")
-            choose = int(input("Choose the movie: ")) - 1
-            movie_url = movie_list[choose].find_all("a")[0].get("href")
-        else:
-            movie_url = movie_list[0].find_all("a")[0].get("href")
+        choose = 0
+        # if len(movie_list) > 1:
+        #     for id, movie in enumerate(movie_list):
+        #         movie_name = movie.find_all("a")[1].text
+        #         print(f"{id+1}. {movie_name}")
+        #     choose = int(input("Choose the movie: ")) - 1
+        movie_url = movie_list[choose].find_all("a")[0].get("href")
         main_page = requests.get(movie_url)
         main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
         intro = main_sp.find_all("div", {"class": "movie_intro_info_r"})[0]
@@ -329,8 +329,8 @@ class MovieDataCrawler:
             format_text = text.replace("<br>", "\n").replace("\"", "")
             helpful = comment.find("div", attrs={"class": "actions text-muted"}).text
             helpful = strfm(helpful).split(" ")
-            total = int(helpful[3])
-            approved = int(helpful[0])
+            total = int(helpful[3].replace(",", ""))
+            approved = int(helpful[0].replace(",", ""))
             comment_res["text"] = format_text
             comment_res["total"] = total
             comment_res["approved"] = approved
@@ -376,4 +376,6 @@ class MovieDataCrawler:
         return res
 
     def to_json(self, res):
-        return json.dumps(res, open(f"../data/Data_{self.title}.json", "w"))
+        with open(f"data/MovieData.json", mode = "w+",encoding="utf8") as f:
+            json.dump(res, f, indent=4, ensure_ascii=False)
+        

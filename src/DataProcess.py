@@ -24,25 +24,25 @@ class DataProcess:
     def process_comments_en(comments):
         if len(comments) == 0:
             return 0
-        total = 0.0
+        total_score = 0.0
         for comment in comments:
             text_en = ""
-            if len(comment["text"]) > 4500 :
-                i = 0
-                while 4500 + i* 4500 < len(comment["text"]):
-                    text_en += GoogleTranslator(source='auto', target='en').translate(text=comment["text"][i*4500:(i+1)*4500])
-                    i += 1
-            # text_en =  GoogleTranslator(source='auto', target='en').translate(text=comment["text"])
+            
+            i = 0
+            while  i* 4500 < len(comment["text"]):
+                text_en += GoogleTranslator(source='auto', target='en').translate(text=comment["text"][i*4500:(i+1)*4500])
+                i += 1
             emotion = te.get_emotion(text_en)
-            approved = comment.get("approved", 0.7)
-            total = comment.get("total", 1)
+            approved = comment.get("approved", 5)
+            total = comment.get("total", 10)
+            factor = 0.7
             if total != 0:
                 factor = approved/total
-            score = (2*emotion["Happy"]-2*emotion["Angry"]+0.5*emotion["Surprise"]-0.5*emotion["Sad"]-0.5*emotion["Fear"])*factor
+            score = (emotion["Happy"]-emotion["Angry"]+emotion["Surprise"]-emotion["Sad"]-emotion["Fear"])*factor
             score = 1 if score > 1 else score
             score = -1 if score < -1 else score
-            total += score
-        return total/len(comments)
+            total_score += score
+        return total_score/len(comments)
 
     @staticmethod
     def process_comments_zh(comments):
@@ -51,12 +51,11 @@ class DataProcess:
         total = 0.0
         for comment in comments:
             text_zhCN = ""
-            if len(comment["text"]) > 4500 :
-                i = 0
-                while 4500 + i* 4500 < len(comment["text"]):
-                    text_zhCN += GoogleTranslator(source='auto', target='zh-CN').translate(text=comment["text"][i*4500:(i+1)*4500])
-                    i += 1
-            # text_zhCN = GoogleTranslator(source='auto', target='zh-CN').translate(text=comment["text"])
+            i = 0
+            while i* 4500 < len(comment["text"]):
+                text_zhCN += GoogleTranslator(source='auto', target='zh-CN').translate(text=comment["text"][i*4500:(i+1)*4500])
+                i += 1
+            
             emotion = DataProcess.senti.sentiment_calculate(text_zhCN)
             neg = emotion["neg"]
             pos = emotion["pos"]
@@ -74,5 +73,5 @@ class DataProcess:
 
     @staticmethod
     def to_json(data):  # save data to json file
-        with open('/data/data.json', 'w') as f:
+        with open('data/data.json', 'w') as f:
             json.dump(data, f, indent=4)
