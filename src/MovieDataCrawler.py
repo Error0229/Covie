@@ -59,6 +59,7 @@ class MovieDataCrawler:
         self.crawl_imdb()
         return self.data
 
+
     def update(self, website, result):
         self.data[website] = result
 
