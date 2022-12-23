@@ -17,7 +17,7 @@ class DataProcess:
         data["imdb"]["NLP Score"] = DataProcess.process_comments_all(data["imdb"]["all_comments"])
         data["rotten_tomatoes"]["NLP Score"] = DataProcess.process_comments_all(data["rotten_tomatoes"]["all_comments"])
         data["yahoo"]["NLP Score"] = DataProcess.process_comments_all(data["yahoo"]["all_comments"])
-        # data["douban"]["NLP Score"] = DataProcess.process_comments_zh(data["douban"]["all_comments"])
+        
         return data
 
     @staticmethod
