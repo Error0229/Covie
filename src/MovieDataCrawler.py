@@ -91,7 +91,7 @@ class MovieDataCrawler:
         soup = bs4.BeautifulSoup(req, "html.parser")
         all_match = soup.find("search-page-result", attrs={"type": "movie"})
         if not all_match:
-            print("rotten_tomatoes no matched movie")
+            print(f"Can't find {self.keyword} in rotten tomatoes database")
             return
         all_match = all_match.find_all("search-page-media-row")
         choose = 0
