@@ -22,8 +22,12 @@ week16等待報告<br>
 ## To run on local host
 1. install node.js
 2. run 
-> py main.py
+```shell
+py main.py
+```
 3. run 
-> cd webdev<br>
-> npm run dev
+```shell
+  cd webdev
+  npm run dev
+```
 4. click the link 
