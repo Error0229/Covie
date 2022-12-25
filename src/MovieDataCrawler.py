@@ -80,7 +80,7 @@ class MovieDataCrawler:
         res["trailer"] = "N/A"
         res["website"] = "N/A"
         return res
-# tbf
+
 
     def crawl_rotten_tomatoes(self):
         res = {}
@@ -308,7 +308,7 @@ class MovieDataCrawler:
         res["intro"] = strfm(main_sp.find_all("span", {"id": "story"})[0].text)
         res["rating"] = (
             "N/A" if is_series else intro.find_all("div")[0].get("class")[0][5:])
-        res["poster_url"] = (main_sp.find_all("div", {"class": "movie_intro_foto"})[
+        res["poster"] = (main_sp.find_all("div", {"class": "movie_intro_foto"})[
                              0].find("img").get("src"))
         res["all_comments"] = self.crawl_yahoo_comments(res["comment_url"])
         self.update("yahoo", res)
