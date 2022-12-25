@@ -3,5 +3,5 @@ src/__pycache__/
 data/*.json
 playground.py
 /env
-*.html
-/webdev
+test.html
+# /webdev

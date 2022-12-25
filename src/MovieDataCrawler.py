@@ -24,17 +24,21 @@ def get_time(text):
         return int(time[0])
 
 
-# use re to get the number from string
+# use re to get the number from string , contain "," is ok
 def get_num(text):
     return re.findall(r"\d+", text)[0]
-
+def get_num_v2(text):
+    return re.findall(r'[\d,\,,\+]+',text)[0]
+# def get_num_v3(text):
+#     return re.findall(r'[\d,\,,\+]+ (?=Reviews)',text)[0]
 # use re to test if the string is a ad year
 
 
 def is_year(text):
     return re.match(r"\d{4}", text)
 
-
+def get_year(text):
+    return re.findall(r"\d{4}", text)[0]
 class MovieDataCrawler:
     def __init__(self, keyword):
         nltk.download('omw-1.4')
@@ -71,10 +75,11 @@ class MovieDataCrawler:
         res["length"] = "N/A"
         res["rating"] = "N/A"
         res["release_date"] = "N/A"
-        res["genre"] = "N/A"
+        res["hashtags"] = "N/A"
         res["director"] = "N/A"
-        res["cast"] = "N/A"
-        res["summary"] = "N/A"
+        res["actors"]= "N/A"
+        res["vote_num"] = "N/A"
+        res["intro"] = "N/A"
         res["poster"] = "N/A"
         res["trailer"] = "N/A"
         res["website"] = "N/A"
@@ -104,39 +109,39 @@ class MovieDataCrawler:
         req = requests.get(movie_url, headers=headers).text
         soup = bs4.BeautifulSoup(req, "html.parser")
         res["poster"] = soup.find("img", attrs={"class": "posterImage"})["src"]
-        res["summary"] = strfm(
+        res["actors"] = [strfm(actor.text) for actor in soup.find_all("div", attrs={"data-qa": "cast-section"})[0].find_all("a", attrs={"data-qa": "cast-crew-item-link"})]
+        res["intro"] = strfm(
             soup.find("div", attrs={"id": "movieSynopsis"}).text)
         score_container = soup.find("score-board")
         res["rating"] = score_container.attrs["tomatometerscore"]
-        if not res["rating"]:
-            res["rating"] = "N/A"
-        res["rating_count"] = get_num(score_container.find_all("a")[0].text)
+        # if not res["rating"]:
+        #     res["rating"] = "N/A"
+        res["rating_count"] = get_num_v2(score_container.find_all("a")[0].text)
         res["rating_link"] = "https://www.rottentomatoes.com" + \
             score_container.find_all("a")[0]["href"]
         res["audience_rating"] = score_container.attrs["audiencescore"]
         if not res["audience_rating"]:
             res["audience_rating"] = "N/A"
-        res["audience_rating_count"] = get_num(
-            score_container.find_all("a")[1].text)
+        res["audience_rating_count"] = get_num_v2(score_container.find_all("a")[1].text)
         res["audience_rating_link"] = "https://www.rottentomatoes.com" + \
             score_container.find_all("a")[1]["href"]
         info_label = soup.find_all("div", attrs={"data-qa": "movie-info-item-label"})
         info_value = soup.find_all("div", attrs={"data-qa": "movie-info-item-value"})
         for index in range(len(info_label)):
             if strfm(info_label[index].text) == "Genre:":
-                res["genre"] = strfm(info_value[index].text)
+                res["hashtags"] = [strfm(x) for x in strfm(info_value[index].text).split(",")]
             if strfm(info_label[index].text) == "Director:":
                 res["director"] = strfm(info_value[index].text)
             if info_label[index].text == "Runtime:":
                 # print(info_value[index].text)
                 res["length"] = get_time(info_value[index].text)
-            if info_label[index].text == "Producor:":
-                res["producer"] = strfm(info_value[index].text)
             # data of theaters release date is more prior than data of streaming release date
             if info_label[index].text == "Release Date (Theaters):":
                 res["date"] = strfm(info_value[index].text)
+                res["year"] = get_year(res["date"].split(",")[1])
             if info_label[index].text == "Release Date (Streaming):":
                 res["date"] = strfm(info_value[index].text)
+                res["year"] = get_year(res["date"].split(",")[1])
         res["all_comments"] = self.crawl_rotten_tomatoes_comments(res["audience_rating_link"])
         self.update("rotten_tomatoes", res)
         # print(res)
@@ -269,6 +274,8 @@ class MovieDataCrawler:
         #         print(f"{id+1}. {movie_name}")
         #     choose = int(input("Choose the movie: ")) - 1
         movie_url = movie_list[choose].find_all("a")[0].get("href")
+        res["title"]=strfm(movie_list[choose].find_all("a")[1].text)
+        res["website"]=movie_url
         main_page = requests.get(movie_url)
         main_sp = bs4.BeautifulSoup(main_page.text, "html.parser")
         intro = main_sp.find_all("div", {"class": "movie_intro_info_r"})[0]

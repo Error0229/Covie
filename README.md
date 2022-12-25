@@ -1,5 +1,6 @@
 # Covie
 A movie recommender using python crawler and NLP etc.
+## Overview
 1. 組別名稱：<br>cat
 2. 成員班級、姓名、學號：<br>
 資工二 林奕廷 110590004<br>
@@ -18,3 +19,11 @@ week13做term project<br>
 week14做term project，完成termproject<br>
 week15等待報告<br>
 week16等待報告<br>
+## To run on local host
+1. install node.js
+2. run 
+> py main.py
+3. run 
+> cd webdev
+> npm run dev
+4. click the link 
