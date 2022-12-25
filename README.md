@@ -24,6 +24,6 @@ week16等待報告<br>
 2. run 
 > py main.py
 3. run 
-> cd webdev
+> cd webdev<br>
 > npm run dev
 4. click the link 
