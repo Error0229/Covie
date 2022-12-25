@@ -23,7 +23,7 @@ week16等待報告<br>
 1. install node.js
 2. run 
 ```shell
-py main.py
+  py main.py
 ```
 3. run 
 ```shell
