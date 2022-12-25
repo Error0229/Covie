@@ -2,9 +2,9 @@ import requests
 import bs4
 import re
 import json
-import os
-import translators as ts
-import translators.server as tss
+# import os
+# import translators as ts
+# import translators.server as tss
 import nltk
 # use re to remove space and \n at the beginning and end of string also replace <br> with \n
 
@@ -39,15 +39,15 @@ class MovieDataCrawler:
     def __init__(self, keyword):
         nltk.download('omw-1.4')
         self.keyword = keyword
-        self.zh_keyword = tss.google(keyword, to_language="zh-TW")
-        self.en_keyword = tss.google(keyword, to_language="en")
+        # self.zh_keyword = tss.google(keyword, to_language="zh-TW")
+        # self.en_keyword = tss.google(keyword, to_language="en")
         self.data = {}
         self.set_name(keyword)
         self.data["website"] = ["yahoo", "imdb", "douban", "rotten_tomatoes"]
-        self.data["yahoo"] = {}
-        self.data["imdb"] = {}
-        self.data["douban"] = {}
-        self.data["rotten_tomatoes"] = {}
+        self.data["yahoo"] = self.init_result()
+        self.data["imdb"] = self.init_result()
+        self.data["douban"] = self.init_result()
+        self.data["rotten_tomatoes"] = self.init_result()
 
     def set_name(self, name):
         self.title = name
@@ -58,7 +58,6 @@ class MovieDataCrawler:
         self.crawl_rotten_tomatoes()
         self.crawl_imdb()
         return self.data
-
 
     def update(self, website, result):
         self.data[website] = result
@@ -79,8 +78,8 @@ class MovieDataCrawler:
         res["poster"] = "N/A"
         res["trailer"] = "N/A"
         res["website"] = "N/A"
+        res["all_comments"] = []
         return res
-
 
     def crawl_rotten_tomatoes(self):
         res = {}
@@ -254,14 +253,14 @@ class MovieDataCrawler:
         Name = self.keyword.replace(" ", "+")
 
         search_url = (
-            f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}&type=movie&movie_type=all")
+            f"https://movies.yahoo.com.tw/moviesearch_result.html?keyword={Name}&type=movie&movie_type=movie")
         search_res = requests.get(search_url)
         search_sp = bs4.BeautifulSoup(search_res.text, "html.parser")
-        if search_sp.find_all("div", attrs= {"class": "search_num _c"})[0].find("span").text == "0":
+        if search_sp.find_all("div", attrs={"class": "search_num _c"})[0].find("span").text == "0":
             print(f"Can't find {self.keyword} in yahoo databse")
             return
 
-        movie_list = search_sp.find_all("ul",attrs= {"class": "release_list mlist"})[
+        movie_list = search_sp.find_all("ul", attrs={"class": "release_list mlist"})[
             0].find_all("li")
         choose = 0
         # if len(movie_list) > 1:
@@ -309,7 +308,7 @@ class MovieDataCrawler:
         res["rating"] = (
             "N/A" if is_series else intro.find_all("div")[0].get("class")[0][5:])
         res["poster"] = (main_sp.find_all("div", {"class": "movie_intro_foto"})[
-                             0].find("img").get("src"))
+            0].find("img").get("src"))
         res["all_comments"] = self.crawl_yahoo_comments(res["comment_url"])
         self.update("yahoo", res)
         # print(res)
@@ -337,7 +336,7 @@ class MovieDataCrawler:
         return res
 
     def crawl_rotten_tomatoes_comments(self, url):
-        print(url)
+        # print(url)
         res = []
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(url, headers=headers).text
@@ -375,6 +374,5 @@ class MovieDataCrawler:
         return res
 
     def to_json(self, res):
-        with open(f"data/MovieData.json", mode = "w+",encoding="utf8") as f:
+        with open(f"data/MovieData.json", mode="w+", encoding="utf8") as f:
             json.dump(res, f, indent=4, ensure_ascii=False)
-        
