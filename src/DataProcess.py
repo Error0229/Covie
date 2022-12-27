@@ -14,7 +14,7 @@ class DataProcess:
 
     @staticmethod
     def process(data):
-
+        
         data["imdb"]["NLP Score"] = DataProcess.process_comments_en(data["imdb"]["all_comments"])
         data["rotten_tomatoes"]["NLP Score"] = DataProcess.process_comments_en(data["rotten_tomatoes"]["all_comments"])
         data["yahoo"]["NLP Score"] = DataProcess.process_comments_zh(data["yahoo"]["all_comments"])

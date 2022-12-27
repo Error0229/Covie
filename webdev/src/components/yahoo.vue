@@ -30,6 +30,7 @@
 </script>
 <template >
     <!-- <main class="bg"> -->
+        <!-- <router-link :to="'/'">Home</router-link> -->
         <div>
             <div class ="header">
                 <img :src=poster_url width="210" />
@@ -82,9 +83,11 @@
     <!-- </main> -->
 </template>
 
-<style scoped>
+<style>
 .hashtagbox{
     display: inline-block;
+    color: #0649E3;
+
     /* background-color: rgb(24, 38, 50); */
     /* padding: 10px; */
     /* left:100px; */

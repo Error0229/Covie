@@ -81,6 +81,8 @@
 <style scoped>
 .hashtagbox{
     display: inline-block;
+    color: #0649E3;
+
     /* background-color: rgb(24, 38, 50); */
     /* padding: 10px; */
     /* left:100px; */

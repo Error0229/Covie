@@ -4,7 +4,7 @@ import re
 import json
 # import os
 # import translators as ts
-# import translators.server as tss
+import translators.server as tss
 import nltk
 # use re to remove space and \n at the beginning and end of string also replace <br> with \n
 
@@ -44,7 +44,7 @@ class MovieDataCrawler:
         nltk.download('omw-1.4')
         self.keyword = keyword
         # self.zh_keyword = tss.google(keyword, to_language="zh-TW")
-        # self.en_keyword = tss.google(keyword, to_language="en")
+        self.en_keyword = tss.google(keyword, to_language="en")
         self.data = {}
         self.set_name(keyword)
         self.data["website"] = ["yahoo", "imdb", "douban", "rotten_tomatoes"]
@@ -88,7 +88,7 @@ class MovieDataCrawler:
 
     def crawl_rotten_tomatoes(self):
         res = {}
-        Name = self.keyword.replace(" ", "+")
+        Name = self.en_keyword.replace(" ", "+")
         search_url = (f"https://www.rottentomatoes.com/search?search={Name}")
         headers = {'user-agent': 'Mozilla/5.0'}
         req = requests.get(search_url, headers=headers).text
